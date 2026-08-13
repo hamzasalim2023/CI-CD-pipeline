@@ -4,6 +4,7 @@ import argparse
 import sys
 
 from mytool import __version__
+from mytool.commands import deps as deps_cmd
 from mytool.commands import secrets as secrets_cmd
 
 
@@ -18,6 +19,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", metavar="COMMAND")
     secrets_cmd.add_parser(subparsers)
+    deps_cmd.add_parser(subparsers)
     return parser
 
 

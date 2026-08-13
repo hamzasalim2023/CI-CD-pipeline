@@ -1,0 +1,9 @@
+# Fixture with intentionally old, vulnerable pin versions (for testing only)
+flask==1.1.4
+requests==2.19.1
+urllib3==1.24.1
+django==2.2.0
+pillow==8.0.0
+# range specs are not queried (only exact == pins) - a deliberate FP guard
+pyyaml>=5.1
+requests>=2.25.0
