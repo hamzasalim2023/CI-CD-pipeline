@@ -2,7 +2,7 @@
 
 import os
 
-from mytool.commands.common import exit_for_findings, write_output
+from mytool.commands.common import exit_for_findings, filter_changed, write_output
 from mytool.diff import GitError, added_lines
 from mytool.secrets.detector import scan_lines, scan_path
 
@@ -38,13 +38,6 @@ def add_parser(subparsers):
     parser.set_defaults(func=run_scan_secrets)
 
 
-def _filter_changed(changed, path: str) -> dict:
-    if path in (".", os.curdir):
-        return changed
-    prefix = os.path.normpath(path).replace("\\", "/")
-    return {f: lines for f, lines in changed.items() if f == prefix or f.startswith(prefix + "/")}
-
-
 def run_scan_secrets(args) -> int:
     findings = []
     if args.diff:
@@ -55,7 +48,7 @@ def run_scan_secrets(args) -> int:
         except GitError as exc:
             print(f"error: {exc}")
             return 2
-        changed = _filter_changed(changed, args.path)
+        changed = filter_changed(changed, args.path)
         for file, lines in sorted(changed.items()):
             findings.extend(scan_lines(lines, file))
     else:

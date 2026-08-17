@@ -1,12 +1,21 @@
 """Shared output helpers for CLI commands (human table + JSON)."""
 
 import json
+import os
 import sys
 
 from rich.console import Console
 from rich.table import Table
 
 console = Console()
+
+
+def filter_changed(changed: dict, path: str) -> dict:
+    """Restrict a diff's changed-file dict to a given path prefix."""
+    if path in (".", os.curdir):
+        return changed
+    prefix = os.path.normpath(path).replace("\\", "/")
+    return {f: lines for f, lines in changed.items() if f == prefix or f.startswith(prefix + "/")}
 
 
 def print_findings_table(findings) -> None:

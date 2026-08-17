@@ -6,6 +6,7 @@ import sys
 from mytool import __version__
 from mytool.commands import deps as deps_cmd
 from mytool.commands import sast as sast_cmd
+from mytool.commands import scan as scan_cmd
 from mytool.commands import secrets as secrets_cmd
 
 
@@ -22,6 +23,7 @@ def build_parser() -> argparse.ArgumentParser:
     secrets_cmd.add_parser(subparsers)
     deps_cmd.add_parser(subparsers)
     sast_cmd.add_parser(subparsers)
+    scan_cmd.add_parser(subparsers)
     return parser
 
 
