@@ -8,5 +8,8 @@ dist/
 venv/
 *.db
 *.sqlite
+.ci-scanner-cache.sqlite
+scan-results.json
+.env
 .idea/
 .vscode/
