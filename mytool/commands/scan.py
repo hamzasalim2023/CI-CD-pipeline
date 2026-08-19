@@ -4,6 +4,7 @@ import os
 
 from mytool.commands import deps as deps_cmd
 from mytool.commands.common import exit_for_findings, filter_changed, write_output
+from mytool.config import load_config, process_findings
 from mytool.deps.cache import OSVCache
 from mytool.deps.parsers import MANIFEST_KINDS, parse_manifest_text
 from mytool.deps.scanner import OSVError, DependencyScanner
@@ -70,7 +71,15 @@ def add_parser(subparsers):
         action="store_true",
         help="Ignore the cache and re-query the OSV API.",
     )
-    parser.set_defaults(func=run_scan)
+    parser.add_argument(
+        "--config",
+        help="Path to a mytool.toml config file (default: discovered upward "
+             "from the scan path).",
+    )
+    parser.set_defaults(
+        func=run_scan, fail_on=None, cache_dir=None,
+        ttl_hours=None, offline=None, refresh=None,
+    )
 
 
 def _changed_files(args):
@@ -117,10 +126,17 @@ def _code_findings(args, changed) -> list:
     return sast_scan_path(args.path)
 
 
-def _deps_findings(args, changed) -> list:
-    cache = OSVCache(args.cache_dir, ttl_hours=args.ttl_hours)
+def _deps_findings(args, changed, cfg) -> list:
+    cache_dir = getattr(args, "cache_dir", None) or cfg.cache_dir
+    ttl_hours = getattr(args, "ttl_hours", None)
+    ttl_hours = ttl_hours if ttl_hours is not None else cfg.ttl_hours
+    offline = getattr(args, "offline", None)
+    offline = offline if offline is not None else cfg.offline
+    refresh = getattr(args, "refresh", None)
+    refresh = refresh if refresh is not None else cfg.refresh
+    cache = OSVCache(cache_dir, ttl_hours=ttl_hours)
     scanner = DependencyScanner(
-        cache=cache, offline=args.offline, refresh=args.refresh,
+        cache=cache, offline=offline, refresh=refresh,
     )
     try:
         if changed is not None:
@@ -154,6 +170,8 @@ def _load_manifests(files: list) -> list:
 
 
 def run_scan(args) -> int:
+    cfg = load_config(getattr(args, "config", None), start=args.path)
+    fail_on = getattr(args, "fail_on", None) or cfg.fail_on
     changed = _changed_files(args)
     if changed == "ERROR":
         return 2
@@ -162,13 +180,16 @@ def run_scan(args) -> int:
     if not args.no_secrets:
         findings.extend(_secrets_findings(args, changed))
     if not args.no_deps:
-        deps = _deps_findings(args, changed)
+        deps = _deps_findings(args, changed, cfg)
         if deps is None:
             return 2
         findings.extend(deps)
     if not args.no_code:
         findings.extend(_code_findings(args, changed))
 
+    findings = process_findings(findings, cfg)
+    if cfg.source:
+        print(f"[dim]Using config: {cfg.source}[/dim]")
     ordered = write_output(
         findings, as_json=args.json, out_file=args.output,
     )
@@ -181,4 +202,4 @@ def run_scan(args) -> int:
             f"\n[dim]{len(ordered)} finding(s): {summary} - severity above "
             f"threshold would fail the build.[/dim]"
         )
-    return exit_for_findings(findings, args.fail_on)
+    return exit_for_findings(findings, fail_on)

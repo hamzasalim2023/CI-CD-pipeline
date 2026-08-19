@@ -3,6 +3,7 @@
 import os
 
 from mytool.commands.common import exit_for_findings, write_output
+from mytool.config import load_config, process_findings
 from mytool.deps.cache import OSVCache
 from mytool.deps.parsers import (
     discover_manifests,
@@ -48,7 +49,15 @@ def add_parser(subparsers):
         action="store_true",
         help="Ignore the cache and re-query the OSV API.",
     )
-    parser.set_defaults(func=run_scan_deps)
+    parser.add_argument(
+        "--config",
+        help="Path to a mytool.toml config file (default: discovered upward "
+             "from the scan path).",
+    )
+    parser.set_defaults(
+        func=run_scan_deps, fail_on=None, cache_dir=None,
+        ttl_hours=None, offline=None, refresh=None,
+    )
 
 
 def load_packages(path: str) -> list:
@@ -71,12 +80,20 @@ def load_packages(path: str) -> list:
 
 
 def run_scan_deps(args) -> int:
+    cfg = load_config(getattr(args, "config", None), start=args.path)
+    fail_on = getattr(args, "fail_on", None) or cfg.fail_on
+    cache_dir = getattr(args, "cache_dir", None) or cfg.cache_dir
+    ttl_hours = getattr(args, "ttl_hours", None)
+    ttl_hours = ttl_hours if ttl_hours is not None else cfg.ttl_hours
+    offline = getattr(args, "offline", None)
+    offline = offline if offline is not None else cfg.offline
+    refresh = getattr(args, "refresh", None)
+    refresh = refresh if refresh is not None else cfg.refresh
+
     packages = load_packages(args.path)
-    if args.json and not args.output:
-        pass
-    cache = OSVCache(args.cache_dir, ttl_hours=args.ttl_hours)
+    cache = OSVCache(cache_dir, ttl_hours=ttl_hours)
     scanner = DependencyScanner(
-        cache=cache, offline=args.offline, refresh=args.refresh,
+        cache=cache, offline=offline, refresh=refresh,
     )
     try:
         findings = scanner.findings_for(packages)
@@ -86,6 +103,9 @@ def run_scan_deps(args) -> int:
     finally:
         cache.close()
 
+    findings = process_findings(findings, cfg)
+    if cfg.source:
+        print(f"[dim]Using config: {cfg.source}[/dim]")
     ordered = write_output(
         findings, as_json=args.json, out_file=args.output,
     )
@@ -98,4 +118,4 @@ def run_scan_deps(args) -> int:
         )
     elif not args.json:
         print(f"[dim]Checked {len(packages)} package(s) against the OSV database.[/dim]")
-    return exit_for_findings(findings, args.fail_on)
+    return exit_for_findings(findings, fail_on)

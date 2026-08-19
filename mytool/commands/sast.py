@@ -3,6 +3,7 @@
 import os
 
 from mytool.commands.common import exit_for_findings, filter_changed, write_output
+from mytool.config import load_config, process_findings
 from mytool.diff import GitError, added_lines
 from mytool.sast.checker import scan_path, scan_text
 
@@ -36,10 +37,17 @@ def add_parser(subparsers):
         default="high",
         help="Comma-separated severities that fail the build (default: high).",
     )
-    parser.set_defaults(func=run_scan_code)
+    parser.add_argument(
+        "--config",
+        help="Path to a mytool.toml config file (default: discovered upward "
+             "from the scan path).",
+    )
+    parser.set_defaults(func=run_scan_code, fail_on=None)
 
 
 def run_scan_code(args) -> int:
+    cfg = load_config(getattr(args, "config", None), start=args.path)
+    fail_on = getattr(args, "fail_on", None) or cfg.fail_on
     findings = []
     if args.diff:
         base = args.diff[0]
@@ -66,6 +74,9 @@ def run_scan_code(args) -> int:
             return 2
         findings = scan_path(path)
 
+    findings = process_findings(findings, cfg)
+    if cfg.source:
+        print(f"[dim]Using config: {cfg.source}[/dim]")
     ordered = write_output(
         findings, as_json=args.json, out_file=args.output,
     )
@@ -74,4 +85,4 @@ def run_scan_code(args) -> int:
             f"\n[dim]{len(findings)} insecure code pattern(s) detected - severity "
             f"above threshold would fail the build.[/dim]"
         )
-    return exit_for_findings(findings, args.fail_on)
+    return exit_for_findings(findings, fail_on)
