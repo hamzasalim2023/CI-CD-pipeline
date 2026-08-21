@@ -13,7 +13,6 @@ dependencies = [
     "requests>=2.31",
     "tomli>=2.0; python_version < '3.11'",
 ]
-optional-dependencies = { test = ["pytest"] }
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0"]
