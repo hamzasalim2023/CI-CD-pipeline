@@ -1,4 +1,4 @@
-# mytool — CI/CD pipeline security scanner
+# CI/CD pipeline security scanner
 
 A stateless CLI that runs in CI (as a GitHub Action, GitLab CI job, or
 standalone) and scans a repository for three classes of issues:
