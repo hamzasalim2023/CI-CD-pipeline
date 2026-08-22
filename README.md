@@ -144,4 +144,4 @@ python -m pytest
 
 The test suite uses fixtures under `tests/fixtures/`. Note that the fixtures
 contain intentionally vulnerable code and fake credentials for the scanners to
-find — they are never real secrets.
+find.
