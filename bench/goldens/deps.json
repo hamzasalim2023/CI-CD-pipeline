@@ -1,0 +1,37 @@
+{
+  "scan_type": "deps",
+  "_explanation": "Package-level ground truth verified against the OSV API (see bench/scripts/verify_deps.py). A package is deemed vulnerable if OSV returns at least one advisory for the pinned version. The evaluator matches findings by package name (the 'context'/'package' field). 'clean' packages must not produce a finding.",
+  "findings": {
+    "packages": [
+      {"name": "flask", "ecosystem": "PyPI", "file": "requirements.txt"},
+      {"name": "django", "ecosystem": "PyPI", "file": "requirements.txt"},
+      {"name": "urllib3", "ecosystem": "PyPI", "file": "requirements.txt"},
+      {"name": "Pillow", "ecosystem": "PyPI", "file": "requirements.txt"},
+      {"name": "certifi", "ecosystem": "PyPI", "file": "requirements.txt"},
+      {"name": "lodash", "ecosystem": "npm", "file": "package.json"},
+      {"name": "minimist", "ecosystem": "npm", "file": "package.json"},
+      {"name": "yargs-parser", "ecosystem": "npm", "file": "package.json"},
+      {"name": "tar", "ecosystem": "npm", "file": "package.json"},
+      {"name": "axios", "ecosystem": "npm", "file": "package.json"},
+      {"name": "mixin-deep", "ecosystem": "npm", "file": "package.json"},
+      {"name": "serialize-javascript", "ecosystem": "npm", "file": "package.json"},
+      {"name": "dot-prop", "ecosystem": "npm", "file": "package.json"},
+      {"name": "debug", "ecosystem": "npm", "file": "package.json"},
+      {"name": "golang.org/x/text", "ecosystem": "Go", "file": "go.mod"},
+      {"name": "gopkg.in/yaml.v2", "ecosystem": "Go", "file": "go.mod"},
+      {"name": "github.com/gin-gonic/gin", "ecosystem": "Go", "file": "go.mod"},
+      {"name": "github.com/gorilla/websocket", "ecosystem": "Go", "file": "go.mod"},
+      {"name": "github.com/dgrijalva/jwt-go", "ecosystem": "Go", "file": "go.mod"},
+      {"name": "github.com/hashicorp/go-retryablehttp", "ecosystem": "Go", "file": "go.mod"},
+      {"name": "github.com/nats-io/nats-server/v2", "ecosystem": "Go", "file": "go.mod"},
+      {"name": "github.com/ulikunitz/xz", "ecosystem": "Go", "file": "go.mod"}
+    ]
+  },
+  "clean": {
+    "packages": [
+      {"name": "redis", "ecosystem": "PyPI", "file": "requirements.txt"},
+      {"name": "boto3", "ecosystem": "PyPI", "file": "requirements.txt"},
+      {"name": "ms", "ecosystem": "npm", "file": "package.json"}
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+# Dependency manifests with KNOWN-VULNERABLE packages (verified against OSV)
+# so that scan-deps, osv-scanner, and trivy all return findings.
+#
+# NOTE: These pins are intentionally old/vulnerable. They are for benchmarking
+# only and must never be used in a real project.
+
+# --- requirements.txt (PyPI) ---
+# Known-vulnerable packages with published OSV/PyPA advisories.
+flask==0.12.2
+django==2.0.7
+urllib3==1.24.1
+redis==2.10.5
+Pillow==6.2.0
+boto3==1.9.254
+certifi==2017.4.17
+# safe pin - multiple OSV advisories

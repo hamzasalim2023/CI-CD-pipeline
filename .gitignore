@@ -10,6 +10,7 @@ venv/
 *.sqlite
 .ci-scanner-cache.sqlite
 scan-results.json
+bench/results/
 .env
 .idea/
 .vscode/

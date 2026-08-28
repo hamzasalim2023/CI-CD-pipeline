@@ -1,0 +1,23 @@
+{
+  "scan_type": "code",
+  "file": "fixtures/code/app.py",
+  "_explanation": "Line-level ground truth. Each line genuinely contains an insecure code pattern. 'decoys' are safe lines that must not be flagged.",
+  "findings": {
+    "lines": [15, 19, 24, 28, 34, 40, 41, 48, 55, 62],
+    "detail": {
+      "15": ["sast-eval-exec"],
+      "19": ["sast-eval-exec"],
+      "24": ["sast-shell-true"],
+      "28": ["sast-os-system"],
+      "34": ["sast-verify-false"],
+      "40": ["sast-ssl-check-hostname"],
+      "41": ["sast-ssl-check-hostname"],
+      "48": ["sast-insecure-deserialization"],
+      "55": ["sast-sql-injection"],
+      "62": ["sast-sql-injection"]
+    }
+  },
+  "decoys": {
+    "lines": [70, 76, 81]
+  }
+}

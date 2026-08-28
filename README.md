@@ -145,3 +145,22 @@ python -m pytest
 The test suite uses fixtures under `tests/fixtures/`. Note that the fixtures
 contain intentionally vulnerable code and fake credentials for the scanners to
 find.
+
+## Benchmarking against other scanners
+
+A reproducible harness lives in `bench/` for comparing mytool with other
+vulnerability scanners on detection accuracy (precision / recall / F1) and
+performance (wall-clock time). It runs mytool plus any competitor binaries you
+install (`gitleaks`, `trufflehog`, `osv-scanner`, `trivy`, `bandit`, `semgrep`)
+over a curated vulnerable fixture corpus and scores them against ground-truth
+golden baselines.
+
+```bash
+python bench/scripts/run_scanners.py --reps 3   # run all available scanners
+python bench/scripts/evaluate.py                # print the comparison table
+python bench/scripts/verify_deps.py             # sanity-check the dependency golden
+```
+
+See [`bench/README.md`](bench/README.md) for the full details. Generated scan
+output under `bench/results/` is git-ignored; the fixtures and goldens are
+committed.
