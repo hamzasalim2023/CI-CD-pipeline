@@ -9,7 +9,8 @@ from types import SimpleNamespace
 from unittest import mock
 
 from mytool.commands.scan import run_scan
-from mytool.models import Finding
+from mytool.commands.common import exit_for_findings
+from mytool.models import Finding, threshold_for
 
 FAKE_DEP = Finding(
     scan_type="dependency",
@@ -92,6 +93,34 @@ class TestScanCommand(unittest.TestCase):
             )
         self.assertEqual(code, 2)
         self.assertIn("boom", out)
+
+
+class TestFailOnThreshold(unittest.TestCase):
+    def _finding(self, severity):
+        return Finding("secret", "secret-generic-api-key", severity,
+                       "app.py", 1, "msg", context="abc")
+
+    def test_single_severity_threshold(self):
+        # high finding with fail-on=high -> fail
+        self.assertEqual(exit_for_findings([self._finding("high")], "high"), 1)
+        # low finding with fail-on=high -> pass
+        self.assertEqual(exit_for_findings([self._finding("low")], "high"), 0)
+
+    def test_comma_separated_fail_on(self):
+        # threshold resolves to the lowest listed severity (medium -> fail on medium+)
+        low = exit_for_findings([self._finding("low")], "medium,critical")
+        medium = exit_for_findings([self._finding("medium")], "medium,critical")
+        self.assertEqual(low, 0)
+        self.assertEqual(medium, 1)
+        # 'critical,high' -> threshold=high -> high fails, medium passes
+        self.assertEqual(exit_for_findings([self._finding("high")], "critical,high"), 1)
+        self.assertEqual(exit_for_findings([self._finding("medium")], "critical,high"), 0)
+
+    def test_threshold_for_parsing(self):
+        self.assertEqual(threshold_for("high"), 3)
+        self.assertEqual(threshold_for("medium,critical"), 2)  # min bound
+        self.assertEqual(threshold_for(""), 0)  # unknown/empty -> permissive
+        self.assertEqual(threshold_for("bogus"), 0)
 
 
 class TestScanCommandDiff(unittest.TestCase):

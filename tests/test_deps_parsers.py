@@ -32,6 +32,26 @@ class TestRequirements(unittest.TestCase):
         deps = parse_requirements("# comment\nrequests==1.0.0\n")
         self.assertEqual([d.name for d in deps], ["requests"])
 
+    def test_http_prefixed_package_names_kept(self):
+        """A package whose name starts with 'http' must not be dropped as a URL."""
+        text = "httpx==0.24.1\nhttpie==3.2.1\nhttplib2==0.22.0\n"
+        deps = parse_requirements(text)
+        by_name = {d.name: d.version for d in deps}
+        self.assertEqual(by_name.get("httpx"), "0.24.1")
+        self.assertEqual(by_name.get("httpie"), "3.2.1")
+        self.assertEqual(by_name.get("httplib2"), "0.22.0")
+
+    def test_url_and_vcs_references_skipped(self):
+        text = (
+            "git+https://github.com/foo/bar@v1.0#egg=bar\n"
+            "https://files.pythonhosted.org/packages/some/pkg.tar.gz\n"
+            "-e ./local-pkg\n"
+            "requests==2.0.0\n"
+        )
+        deps = parse_requirements(text)
+        self.assertEqual([d.name for d in deps], ["requests"])
+
+
 
 class TestPackageJson(unittest.TestCase):
     def test_extracts_deps_and_devdeps(self):

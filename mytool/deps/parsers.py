@@ -57,7 +57,12 @@ def parse_requirements(text: str, file: str = "") -> list:
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
-        if line.startswith(("-", ".", "http", "git", "hg", "svn")):
+        # Skip option flags (-r, -e, --index-url ...) and paths/VCS references
+        # (./local, ../local, /abs, git+..., hg+..., svn+...). A package name
+        # that merely *starts* with a word like "http" (e.g. httpx==2.0.0) is
+        # NOT a reference and must still be parsed. Bare URLs are filtered out
+        # naturally by the entry_re below.
+        if line.startswith(("-", ".", "/", "git+", "hg+", "svn+")):
             continue
         line = re.split(r"\s+#", line, maxsplit=1)[0].strip()
         m = entry_re.match(line)

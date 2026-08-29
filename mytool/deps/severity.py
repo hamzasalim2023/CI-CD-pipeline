@@ -14,13 +14,20 @@ import math
 _METRICS = {
     "AV": {"N": 0.85, "A": 0.62, "L": 0.55, "P": 0.2},
     "AC": {"L": 0.77, "H": 0.44},
-    "PR": {"N": 0.85, "SPECIAL_C": 0.68, "SPECIAL_U": 0.62,
-           "L_C": 0.68, "L_U": 0.62, "H_C": 0.5, "H_U": 0.27},
     "UI": {"N": 0.85, "R": 0.62},
     "C": {"N": 0.0, "L": 0.22, "H": 0.56},
     "I": {"N": 0.0, "L": 0.22, "H": 0.56},
     "A": {"N": 0.0, "L": 0.22, "H": 0.56},
 }
+
+# Privilege requirement weight depends on scope (CVSS v3.1 table).
+_PR_BY_SCOPE = {
+    "U": {"N": 0.85, "L": 0.62, "H": 0.27},
+    "C": {"N": 0.85, "L": 0.68, "H": 0.5},
+}
+
+# Metrics whose presence is required to score a vector.
+_REQUIRED = ("AV", "AC", "PR", "UI", "S", "C", "I", "A")
 
 
 def _parse_vector(vector: str) -> dict:
@@ -33,6 +40,18 @@ def _parse_vector(vector: str) -> dict:
             continue
         result[key] = value.strip()
     return result
+
+
+def _privilege_weight(v: dict) -> float | None:
+    """PR weight for a parsed vector, honoring scope (v3.1 semantics)."""
+    pr = v.get("PR")
+    scope = v.get("S")
+    if pr == "N":
+        return 0.85  # independent of scope
+    table = _PR_BY_SCOPE.get(scope)
+    if not table or pr not in table:
+        return None
+    return table[pr]
 
 
 def roundup(value: float) -> float:
@@ -50,22 +69,22 @@ def roundup(value: float) -> float:
 
 
 def cvss_base_score(vector: str) -> float | None:
-    """Return the CVSS v3 base score for a vector string, or None."""
+    """Return the CVSS v3 base score for a vector string, or None. Returns
+    None (rather than raising) for malformed or incomplete vectors."""
     v = _parse_vector(vector)
+    # Validate upfront: a vector that's missing any required metric, or whose
+    # metric set has invalid values, cannot be scored.
+    if any(k not in v for k in _REQUIRED):
+        return None
     try:
         av = _METRICS["AV"][v["AV"]]
         ac = _METRICS["AC"][v["AC"]]
-        pr_key = v["PR"]
-        if pr_key == "N":
-            pr = 0.85
-        else:
-            pr = _METRICS["PR"].get(f"{pr_key}_{v['S']}",
-                                    _METRICS["PR"].get(f"SPECIAL_{v['S']}"))
+        pr = _privilege_weight(v)
         ui = _METRICS["UI"][v["UI"]]
         c, i, a = _METRICS["C"][v["C"]], _METRICS["I"][v["I"]], _METRICS["A"][v["A"]]
-        if pr is None:
-            return None
-    except (KeyError, IndexError):
+    except (KeyError, TypeError):
+        return None
+    if pr is None:
         return None
 
     iss = 1 - (1 - c) * (1 - i) * (1 - a)

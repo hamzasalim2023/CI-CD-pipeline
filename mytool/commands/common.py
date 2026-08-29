@@ -81,8 +81,8 @@ def exit_for_findings(findings, fail_on: str) -> int:
     0 -> no findings at/above the threshold
     1 -> findings at/above the threshold (fail the build)
     """
-    from mytool.models import severity_score
+    from mytool.models import severity_score, threshold_for
 
-    threshold = severity_score(fail_on)
+    threshold = threshold_for(fail_on)
     worst = max(severity_score(f.severity) for f in findings) if findings else 0
     return 1 if worst >= threshold else 0
