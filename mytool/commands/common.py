@@ -47,13 +47,33 @@ def print_json(data) -> None:
     print(json.dumps(data, indent=2, default=str))
 
 
-def write_output(findings, as_json: bool, out_file: str | None) -> list:
-    """Render findings to stdout (or a file) in the requested format and
-    return the finding list. When a file is given, JSON is always written
-    to it (for CI parsing) while stdout shows the human summary."""
+def write_output(findings, as_json: bool, out_file: str | None, sarif: bool = False) -> list:
+    """Render findings to stdout (and/or a file) in the requested format and
+    return the finding list.
+
+    Format priority: SARIF (--sarif) > JSON (--json) > human table.
+    When `out_file` is given, the machine-readable report is written there for
+    CI parsing; stdout shows the human summary unless a stdout format flag was
+    explicitly requested. When no `out_file` is given, the chosen format is
+    printed to stdout.
+    """
     ordered = sorted(
         findings, key=lambda f: (-models_severity(f), f.file, f.line)
     )
+
+    if sarif:
+        from mytool.sarif import build_sarif
+
+        report = build_sarif(ordered)
+        if out_file:
+            with open(out_file, "w", encoding="utf-8") as fh:
+                json.dump(report, fh, indent=2)
+        if as_json or not out_file:
+            print_json(report)
+        if not as_json and out_file:
+            print_findings_table(ordered)
+        return ordered
+
     if as_json or out_file:
         payload = {
             "scanner": "mytool",

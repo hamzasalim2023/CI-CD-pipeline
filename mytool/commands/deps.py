@@ -24,7 +24,10 @@ def add_parser(subparsers):
         help="Manifest file, or directory to auto-discover manifests in.",
     )
     parser.add_argument("-j", "--json", action="store_true", help="JSON output.")
-    parser.add_argument("-o", "--output", help="Write JSON report to this file.")
+    parser.add_argument(
+        "--sarif", action="store_true", help="SARIF 2.1.0 report output."
+    )
+    parser.add_argument("-o", "--output", help="Write report to this file.")
     parser.add_argument(
         "--fail-on",
         default="high",
@@ -82,6 +85,7 @@ def load_packages(path: str) -> list:
 def run_scan_deps(args) -> int:
     cfg = load_config(getattr(args, "config", None), start=args.path)
     fail_on = getattr(args, "fail_on", None) or cfg.fail_on
+    sarif = getattr(args, "sarif", False)
     cache_dir = getattr(args, "cache_dir", None) or cfg.cache_dir
     ttl_hours = getattr(args, "ttl_hours", None)
     ttl_hours = ttl_hours if ttl_hours is not None else cfg.ttl_hours
@@ -107,15 +111,15 @@ def run_scan_deps(args) -> int:
     if cfg.source:
         print(f"[dim]Using config: {cfg.source}[/dim]")
     ordered = write_output(
-        findings, as_json=args.json, out_file=args.output,
+        findings, as_json=args.json, out_file=args.output, sarif=sarif,
     )
-    if not args.json and findings:
+    if not args.json and not sarif and findings:
         packages_with_issues = len({f.extra.get("package") for f in findings})
         print(
             f"\n[dim]{len(findings)} vulnerable version(s) across "
             f"{packages_with_issues} package(s) - severity above threshold "
             f"would fail the build.[/dim]"
         )
-    elif not args.json:
+    elif not args.json and not sarif:
         print(f"[dim]Checked {len(packages)} package(s) against the OSV database.[/dim]")
     return exit_for_findings(findings, fail_on)

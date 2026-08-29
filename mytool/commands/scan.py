@@ -37,7 +37,10 @@ def add_parser(subparsers):
         ),
     )
     parser.add_argument("-j", "--json", action="store_true", help="JSON output.")
-    parser.add_argument("-o", "--output", help="Write JSON report to this file.")
+    parser.add_argument(
+        "--sarif", action="store_true", help="SARIF 2.1.0 report output."
+    )
+    parser.add_argument("-o", "--output", help="Write report to this file.")
     parser.add_argument(
         "--fail-on",
         default="high",
@@ -172,6 +175,7 @@ def _load_manifests(files: list) -> list:
 def run_scan(args) -> int:
     cfg = load_config(getattr(args, "config", None), start=args.path)
     fail_on = getattr(args, "fail_on", None) or cfg.fail_on
+    sarif = getattr(args, "sarif", False)
     changed = _changed_files(args)
     if changed == "ERROR":
         return 2
@@ -191,9 +195,9 @@ def run_scan(args) -> int:
     if cfg.source:
         print(f"[dim]Using config: {cfg.source}[/dim]")
     ordered = write_output(
-        findings, as_json=args.json, out_file=args.output,
+        findings, as_json=args.json, out_file=args.output, sarif=sarif,
     )
-    if not args.json and findings:
+    if not args.json and not sarif and findings:
         by_type = {}
         for f in ordered:
             by_type[f.scan_type] = by_type.get(f.scan_type, 0) + 1

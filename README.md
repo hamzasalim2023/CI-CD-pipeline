@@ -29,6 +29,8 @@ pip install -e ".[dev]"
 mytool scan .                # human-readable table, exit 1 on high/critical findings
 mytool scan . --json         # JSON to stdout
 mytool scan . -o report.json # JSON to a file (stdout keeps the summary)
+mytool scan . --sarif        # SARIF 2.1.0 to stdout (native GitHub/GitLab)
+mytool scan . --sarif -o report.sarif
 
 # Run one scanner at a time.
 mytool scan-secrets src/
@@ -84,6 +86,33 @@ rule = "secret-generic-api-key"
 file = "tests/**"
 line = 42
 value = "example"           # case-insensitive match against finding context
+```
+
+## SARIF output & code scanning
+
+All scanners accept `--sarif` (with an optional `-o <file>`), producing a
+[SARIF 2.1.0](https://sarifweb.azurewebsites.net/) report that GitHub code
+scanning and GitLab SAST ingest natively.
+
+```bash
+mytool scan . --sarif -o mytool.sarif
+mytool scan-code src/ --sarif
+```
+
+Each finding becomes a SARIF result with a `security-severity` property and
+(where known) a CWE tag and CWE help URI, so findings surface in the
+repository's security tab rather than only as a JSON blob.
+
+### GitHub code scanning
+
+Use the official `github/codeql-action/upload-sarif@v3` action to post results:
+
+```yaml
+- run: pip install .
+- run: mytool scan . --sarif -o mytool.sarif
+- uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: mytool.sarif
 ```
 
 ## GitHub Action
